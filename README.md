@@ -1,1 +1,1 @@
-# blog-platform-on-aws-amplify
+# Блог-платформа
