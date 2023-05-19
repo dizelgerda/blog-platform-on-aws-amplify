@@ -1,0 +1,18 @@
+projects:
+  blogplatformonawsamplify:
+    schemaPath: amplify/backend/api/blogplatformonawsamplify/build/schema.graphql
+    includes:
+      - src/helpers/graphql/**/*.ts
+    excludes:
+      - ./amplify/**
+    extensions:
+      amplify:
+        codeGenTarget: typescript
+        generatedFileName: src/helpers/types/graphql.ts
+        docsFilePath: src/helpers/graphql
+        region: us-east-1
+        apiId: null
+        maxDepth: 2
+extensions:
+  amplify:
+    version: 3

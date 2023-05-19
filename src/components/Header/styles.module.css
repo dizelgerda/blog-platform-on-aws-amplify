@@ -1,0 +1,15 @@
+.header {
+  min-height: 50px;
+  padding: 0 30px;
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-rows: 1fr;
+  align-items: center;
+  background-color: white;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

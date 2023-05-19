@@ -1,0 +1,30 @@
+/* @import '../vendor/gitbook-azure.css'; */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+:root {
+  --main-bg-color: #F2F4F6;
+  --main-accent-color: #1771F1;
+  --main-danger-color: #E20338;
+}
+
+html {
+  height: 100%;
+
+  font-family: "Roboto", sans-serif;
+  color: black;
+
+}
+
+body {
+  height: 100%;
+  background-color: var(--main-bg-color);
+}
+
+#root {
+  height: 100%;
+}
+
+* {
+  margin: 0;
+  box-sizing: border-box;
+}
