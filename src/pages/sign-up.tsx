@@ -1,24 +1,18 @@
 import Header from "@components/Header";
 import Main from "@components/Main";
 import { confirmSignUp, signUp } from "@helpers/api";
-import { useAppSelector } from "@helpers/store/hooks";
+import { useAppDispatch, useAppSelector } from "@helpers/store/hooks";
 import { PlainObject } from "@helpers/types";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
-import {
-  Button,
-  Card,
-  Container,
-  Form,
-  Offcanvas,
-  Stack,
-} from "react-bootstrap";
+import { Button, Card, Form, Offcanvas, Stack } from "react-bootstrap";
 
 export default function SignUpPage() {
   const [data, setData] = useState<PlainObject>({});
   const [isShowedSidebar, setIsShowedSidebar] = useState<boolean>(false);
   const { isLoggedIn } = useAppSelector((store) => store.app);
+  const dispatch = useAppDispatch();
   const router = useRouter();
 
   useEffect(() => {
@@ -36,9 +30,16 @@ export default function SignUpPage() {
     setIsShowedSidebar(false);
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    signUp(data.email, data.password);
+
+    try {
+      const user = await signUp(data.email, data.password);
+      setIsShowedSidebar(true);
+      console.log(user);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   async function handleConfirmEmail() {
@@ -60,7 +61,7 @@ export default function SignUpPage() {
                   <Form.Control
                     type="email"
                     name="email"
-                    placeholder="Введите адрес электронной почты"
+                    placeholder="email@example.com"
                     onChange={handleChange}
                     value={data.email ?? ""}
                   />
@@ -70,7 +71,7 @@ export default function SignUpPage() {
                   <Form.Control
                     type="password"
                     name="password"
-                    placeholder="Введите"
+                    placeholder="Введите пароль"
                     onChange={handleChange}
                     value={data.password ?? ""}
                   />
@@ -115,6 +116,7 @@ export default function SignUpPage() {
                   type="number"
                   name="confirmation_code"
                   value={data.confirmation_code ?? ""}
+                  onChange={handleChange}
                 />
                 <Form.Text>
                   Мы отправили электронное письмо с кодом на {data.email}.

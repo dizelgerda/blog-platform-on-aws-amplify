@@ -3,13 +3,13 @@ import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 const currentBlogSlice = createSlice({
   name: "currentBlog",
-  initialState: {},
+  initialState: null as Blog | null,
   reducers: {
     addCurrentBlog(_, action: PayloadAction<Blog>) {
       return action.payload;
     },
     removeCurrentBlog() {
-      return {};
+      return null;
     },
   },
 });

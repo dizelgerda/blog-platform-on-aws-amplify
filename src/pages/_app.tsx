@@ -1,12 +1,12 @@
+import "@styles/index.css";
+
 import type { AppProps } from "next/app";
 import { store } from "@helpers/store";
 import { Provider } from "react-redux";
-import { Amplify, AuthModeStrategyType } from "aws-amplify";
+import { Amplify } from "aws-amplify";
 import AWSConfig from "../aws-exports";
 import { useEffect } from "react";
 import { checkAuth } from "@helpers/api";
-
-import "@styles/index.css";
 
 Amplify.configure({ ...AWSConfig, ssr: true });
 

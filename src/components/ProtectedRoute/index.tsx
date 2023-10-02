@@ -1,9 +1,8 @@
 import { useAppSelector } from "@helpers/store/hooks";
-import { useRouter } from "next/router";
 import { ReactNode } from "react";
 
 interface ProtectedRouteProps {
-  children: JSX.Element;
+  children: React.ReactElement;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {

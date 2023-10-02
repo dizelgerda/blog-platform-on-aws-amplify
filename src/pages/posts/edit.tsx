@@ -8,14 +8,14 @@ import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import Main from "@components/Main";
 import { Button, Card, Form, InputGroup, Tab, Tabs } from "react-bootstrap";
 import MarkdownToHTML from "@components/MarkdownToHTML";
+import { User } from "@helpers/types/user";
 
 export default function PostEditPage() {
   const [data, setData] = useState<PlainObject>({});
   const [currentPost, setCurrentPost] = useState<Post>();
-  const {
-    currentUser: { id: owner },
-    currentBlog,
-  } = useAppSelector((store) => store.app);
+  const { currentUser: owner, currentBlog } = useAppSelector(
+    (store) => store.app
+  );
   const router = useRouter();
 
   useEffect(() => {
@@ -32,6 +32,12 @@ export default function PostEditPage() {
       });
     }
   }, [router.isReady]);
+
+  useEffect(() => {
+    if (!(currentBlog as Blog).id) {
+      router.push("/profile");
+    }
+  }, [currentBlog]);
 
   function handleChange(
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -57,7 +63,7 @@ export default function PostEditPage() {
       const blog = (currentBlog as Blog).id;
       const post = await createPost({
         ...data,
-        owner,
+        owner: (owner as User).id,
         blog,
       } as CreatePostInput);
 
@@ -98,7 +104,9 @@ export default function PostEditPage() {
                       onChange={handleChange}
                     />
                   </Form.Group>
-                  <Button variant="primary">Опубликовать</Button>
+                  <Button type="submit" variant="primary">
+                    Опубликовать
+                  </Button>
                 </Form>
               </Tab>
               <Tab eventKey="preview" title="Предпросмотр">

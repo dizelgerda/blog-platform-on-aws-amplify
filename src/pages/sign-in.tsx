@@ -1,15 +1,17 @@
 import Header from "@components/Header";
 import { signIn } from "@helpers/api";
-import { useAppSelector } from "@helpers/store/hooks";
+import { useAppDispatch, useAppSelector } from "@helpers/store/hooks";
 import Main from "@components/Main";
 import { useRouter } from "next/router";
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Card, Form, Button, Stack } from "react-bootstrap";
 import Link from "next/link";
+import { setAlert } from "@helpers/store/slices/alert";
 
 export default function SignInPage() {
   const [data, setData] = useState<{ [key: string]: string }>({});
   const { isLoggedIn } = useAppSelector((store) => store.app);
+  const dispatch = useAppDispatch();
   const router = useRouter();
 
   useEffect(() => {
@@ -25,8 +27,22 @@ export default function SignInPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    await signIn(data.email, data.password);
-    router.push("/profile");
+    try {
+      const user = await signIn(data.email, data.password);
+      console.log(user);
+      router.push("/profile");
+    } catch (err) {
+      if (err instanceof Error) {
+        dispatch(setAlert({ message: err.message, type: "danger" }));
+      } else {
+        dispatch(
+          setAlert({
+            message: "Произошла неизвестная ошибка при входе",
+            type: "danger",
+          })
+        );
+      }
+    }
   }
 
   return (
@@ -39,21 +55,21 @@ export default function SignInPage() {
               <Card.Title className="mb-4">Вход</Card.Title>
               <Stack className="mb-4" gap={2}>
                 <Form.Group>
-                  <Form.Label>Email address</Form.Label>
+                  <Form.Label>Адрес электронной почты</Form.Label>
                   <Form.Control
                     type="email"
                     name="email"
-                    placeholder="email"
+                    placeholder="email@example.com"
                     onChange={handleChange}
                     value={data.email ?? ""}
                   />
                 </Form.Group>
                 <Form.Group>
-                  <Form.Label>Password</Form.Label>
+                  <Form.Label>Пароль</Form.Label>
                   <Form.Control
                     type="password"
                     name="password"
-                    placeholder="password"
+                    placeholder="Введите пароль"
                     onChange={handleChange}
                     value={data.password ?? ""}
                   />

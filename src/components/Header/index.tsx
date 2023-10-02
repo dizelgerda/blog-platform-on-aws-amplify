@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { useAppSelector } from "@helpers/store/hooks";
+import { useAppDispatch, useAppSelector } from "@helpers/store/hooks";
 
 import {
   Button,
+  CloseButton,
   Container,
   Navbar,
   OverlayTrigger,
@@ -12,6 +13,7 @@ import {
 import { Blog } from "@helpers/types/graphql";
 import { signOut } from "@helpers/api";
 import { useRouter } from "next/router";
+import { removeCurrentBlog } from "@helpers/store/slices/currentBlog";
 
 interface HeaderProps {
   isShowedAuthButtons?: boolean;
@@ -20,17 +22,24 @@ interface HeaderProps {
 export default function Header({ isShowedAuthButtons = true }: HeaderProps) {
   const { currentBlog, isLoggedIn } = useAppSelector((store) => store.app);
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   async function handleLogOut() {
     await signOut();
     router.push("/");
   }
 
+  function handleRemoveCurrentBlog() {
+    dispatch(removeCurrentBlog());
+  }
+
   function renderCreateButton() {
-    if ((currentBlog as Blog).id) {
+    if (currentBlog) {
       return (
         <Link href="/posts/edit">
-          <Button variant="outline-primary">Создать</Button>
+          <Button variant="primary" size="sm">
+            Создать
+          </Button>
         </Link>
       );
     }
@@ -41,7 +50,7 @@ export default function Header({ isShowedAuthButtons = true }: HeaderProps) {
         overlay={<Tooltip>Блог не выбран</Tooltip>}
       >
         <div>
-          <Button variant="outline-primary" disabled={true}>
+          <Button variant="outline-primary" size="sm" disabled={true}>
             Создать
           </Button>
         </div>
@@ -65,9 +74,11 @@ export default function Header({ isShowedAuthButtons = true }: HeaderProps) {
                 {isLoggedIn ? (
                   <>
                     <Link href="/profile">
-                      <Button variant="link">Профиль</Button>
+                      <Button variant="link" size="sm">
+                        Профиль
+                      </Button>
                     </Link>
-                    <Button variant="link" onClick={handleLogOut}>
+                    <Button variant="link" size="sm" onClick={handleLogOut}>
                       Выйти
                     </Button>
                   </>
@@ -75,7 +86,9 @@ export default function Header({ isShowedAuthButtons = true }: HeaderProps) {
                   <>
                     {isShowedAuthButtons ? (
                       <Link href="/sign-in">
-                        <Button variant="outline-primary">Войти</Button>
+                        <Button variant="outline-primary" size="sm">
+                          Войти
+                        </Button>
                       </Link>
                     ) : null}
                   </>
@@ -83,12 +96,12 @@ export default function Header({ isShowedAuthButtons = true }: HeaderProps) {
               </Stack>
             </Navbar.Collapse>
 
-            {(currentBlog as Blog).id ? (
+            {currentBlog ? (
               <Navbar.Collapse>
                 <Navbar.Text>
                   Текущий блог:{" "}
-                  <Link href={`/blogs/${(currentBlog as Blog).id}`}>
-                    {(currentBlog as Blog).name}
+                  <Link href={`/blogs/${currentBlog.id}`}>
+                    {currentBlog.name}
                   </Link>
                 </Navbar.Text>
                 <Link href="/profile">
@@ -100,6 +113,10 @@ export default function Header({ isShowedAuthButtons = true }: HeaderProps) {
                     Изменить
                   </Button>
                 </Link>
+                <CloseButton
+                  className="ms-2"
+                  onClick={handleRemoveCurrentBlog}
+                />
               </Navbar.Collapse>
             ) : null}
           </Stack>

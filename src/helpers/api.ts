@@ -19,7 +19,6 @@ import {
   GetBlogQuery,
   GetPostQuery,
   ListBlogsQuery,
-  ListBlogsQueryVariables,
   ListPostsQuery,
   Post,
   UpdateBlogInput,
@@ -28,6 +27,7 @@ import {
   UpdatePostMutation,
 } from "./types/graphql";
 import { removeCurrentBlog } from "./store/slices/currentBlog";
+import { setAlert } from "./store/slices/alert";
 
 function filterByDeleted(data: { _deleted?: boolean | null }[]) {
   return data.filter(({ _deleted }) => {
@@ -37,15 +37,11 @@ function filterByDeleted(data: { _deleted?: boolean | null }[]) {
 
 // AUTH
 
-export async function signUp(username: string, password: string) {
-  try {
-    const { user } = await Auth.signUp({
-      username,
-      password,
-    });
-  } catch (error) {
-    console.error("error signing up:", error);
-  }
+export function signUp(username: string, password: string) {
+  return Auth.signUp({
+    username,
+    password,
+  });
 }
 
 export async function confirmSignUp(username: string, code: string) {
@@ -56,15 +52,8 @@ export async function confirmSignUp(username: string, code: string) {
   }
 }
 
-export async function signIn(username: string, password: string) {
-  try {
-    const user = await Auth.signIn(username, password);
-
-    store.dispatch(changeStatus(true));
-    store.dispatch(addCurrentUser(userDTO(user)));
-  } catch (error) {
-    console.error("error signing in", error);
-  }
+export function signIn(username: string, password: string) {
+  return Auth.signIn(username, password);
 }
 
 export async function signOut() {
@@ -148,7 +137,7 @@ export async function getPostsByBlog(id: string) {
       },
     });
 
-    return filterByDeleted(data?.listPosts?.items as Post[]);
+    return filterByDeleted(data!.listPosts!.items as Post[]);
   } catch (error) {
     console.error(error);
   }
@@ -161,6 +150,18 @@ export async function deletePostByID(input: DeletePostInput) {
       variables: { input },
       authMode: GRAPHQL_AUTH_MODE.AMAZON_COGNITO_USER_POOLS,
     });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export async function getLastPosts() {
+  try {
+    const { data } = await API.graphql<GraphQLQuery<ListPostsQuery>>({
+      query: queries.listPosts,
+      variables: { limit: 80 },
+    });
+    return filterByDeleted(data!.listPosts!.items as Post[]);
   } catch (error) {
     console.error(error);
   }

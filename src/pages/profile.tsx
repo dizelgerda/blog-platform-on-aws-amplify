@@ -3,58 +3,92 @@ import ProtectedRoute from "@components/ProtectedRoute";
 import {
   createBlog,
   deleteBlogByID,
+  deletePostByID,
   getBlogByID,
   getBlogsByOwner,
+  getPostsByBlog,
 } from "@helpers/api";
 import { useAppDispatch, useAppSelector } from "@helpers/store/hooks";
-import { Blog, DeleteBlogInput } from "@helpers/types/graphql";
+import { Blog, DeleteBlogInput, Post } from "@helpers/types/graphql";
 import { useEffect, useState } from "react";
 import Main from "@components/Main";
 import {
   addCurrentBlog,
   removeCurrentBlog,
 } from "@helpers/store/slices/currentBlog";
-import { Button, Card, Stack } from "react-bootstrap";
+import { Button, Card, Modal, ProgressBar, Stack } from "react-bootstrap";
 import LoadStatus from "@components/LoadStatus";
+import { loadWrapper } from "@helpers/utils";
+import Link from "next/link";
+
+interface DeletionStatus {
+  progress: number;
+  message?: string;
+}
+
+const initialDeletionStatus: DeletionStatus = {
+  progress: 0,
+};
 
 export default function ProfilePage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>();
-  const {
-    currentUser: { id: userID },
-    currentBlog,
-  } = useAppSelector((store) => store.app);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [blogForRemove, setBlogForRemove] = useState<DeleteBlogInput | null>(
+    null
+  );
+  const [deletionStatus, setDeletionStatus] = useState<DeletionStatus>(
+    initialDeletionStatus
+  );
+  const { currentUser, currentBlog } = useAppSelector((store) => store.app);
   const dispatch = useAppDispatch();
-  const { id: currentBlogID } = currentBlog as Blog;
 
-  async function handleSelectBlog(id: string) {
+  function handleCloseModal() {
+    setBlogForRemove(null);
+  }
+
+  const handleSelectBlog = loadWrapper(async function (id: string) {
     const blog = await getBlogByID(id);
     dispatch(addCurrentBlog(blog as Blog));
-  }
+  }, setIsLoading);
 
   async function handleCreateBlog() {
     setIsLoading(true);
 
-    await createBlog({ name: "Новый блог", owner: userID });
+    await createBlog({ name: "Новый блог", owner: currentUser!.id });
     await getBlogs();
 
     setIsLoading(false);
   }
 
-  async function handleDeleteBlog(input: DeleteBlogInput) {
-    const { id } = input;
-    if (id === currentBlogID) {
+  async function handleDeleteBlog() {
+    const { id: blogID } = blogForRemove as DeleteBlogInput;
+    if (currentBlog && blogID === currentBlog.id) {
       dispatch(removeCurrentBlog());
     }
 
-    await deleteBlogByID(input);
+    setDeletionStatus({ progress: 0, message: "Удаляем посты..." });
+
+    const posts = (await getPostsByBlog(blogID)) as Post[];
+
+    const range = Math.ceil(100 / (posts.length + 1));
+
+    posts.forEach(async ({ id, _version }) => {
+      await deletePostByID({ id, _version });
+    });
+    setDeletionStatus({
+      progress: posts.length ? range * posts.length : 50,
+      message: "Удаляем блог...",
+    });
+    await deleteBlogByID(blogForRemove as DeleteBlogInput);
     await getBlogs();
+    setBlogForRemove(null);
+    setDeletionStatus(initialDeletionStatus);
   }
 
   async function getBlogs() {
     setIsLoading(true);
 
-    const data = await getBlogsByOwner(userID);
+    const data = await getBlogsByOwner(currentUser!.id);
     console.log(data);
     setBlogs(data as Blog[]);
 
@@ -62,10 +96,14 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    if (userID) {
+    if (currentUser) {
       getBlogs();
     }
-  }, [userID]);
+  }, [currentUser]);
+
+  useEffect(() => {
+    console.log(deletionStatus);
+  }, [deletionStatus]);
 
   return (
     <ProtectedRoute>
@@ -84,12 +122,14 @@ export default function ProfilePage() {
                   <Card key={id}>
                     <Card.Body>
                       <Stack direction="horizontal" gap={2}>
-                        <Card.Text className="my-auto">{name}</Card.Text>
+                        <Link href={`/blogs/${id}`}>
+                          <Card.Text className="my-auto">{name}</Card.Text>
+                        </Link>
                         <Button
                           className="ms-auto"
                           variant="link"
                           size="sm"
-                          disabled={id === currentBlogID}
+                          disabled={currentBlog ? id === currentBlog.id : false}
                           onClick={() => handleSelectBlog(id)}
                         >
                           Выбрать
@@ -97,7 +137,7 @@ export default function ProfilePage() {
                         <Button
                           variant="outline-danger"
                           size="sm"
-                          onClick={() => handleDeleteBlog({ id, _version })}
+                          onClick={() => setBlogForRemove({ id, _version })}
                         >
                           Удалить
                         </Button>
@@ -108,6 +148,32 @@ export default function ProfilePage() {
               })}
             </Stack>
           )}
+
+          <Modal show={!!blogForRemove} onHide={handleCloseModal}>
+            <Modal.Header closeButton>
+              <Modal.Title>Подтвердите удаление</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Stack gap={2}>
+                Вы уверены, что хотите удалить этот блог? Также будут удалены
+                все посты этого блога.
+                <ProgressBar
+                  animated
+                  variant="danger"
+                  now={deletionStatus.progress}
+                />
+                {deletionStatus.message ?? ""}
+              </Stack>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="outline-secondary" onClick={handleCloseModal}>
+                Отмена
+              </Button>
+              <Button variant="danger" onClick={handleDeleteBlog}>
+                Удалить
+              </Button>
+            </Modal.Footer>
+          </Modal>
         </Main>
       </>
     </ProtectedRoute>
